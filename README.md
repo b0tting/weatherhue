@@ -13,3 +13,24 @@ pip3 install -r requirements.txt -U
 mv settings.yaml.example settings.yaml
 python3 weatherhue.py
 ```
+
+You could also add a simple systemd service unit script:
+```
+[Unit]
+Description=WeatherHue python app
+
+[Service]
+PIDFile=/var/run/weatherhue.pid
+WorkingDirectory=/usr/local/weatherhue
+ExecStart=/usr/bin/python3 weatherhue.py
+StandardOutput=append:/var/weatherhue.log
+StandardError=append:/var/weatherhue.log
+
+[Install]
+WantedBy=multi-user.target
+```
+..this would allow you to register and stop/start the weatherhue app easily:
+```
+systemctl enable weatherhue
+systemctl start weatherhue
+```
