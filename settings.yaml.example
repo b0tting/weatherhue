@@ -1,0 +1,75 @@
+---
+  # Verbosity should either be 0 (almost nothing), 1 (weather descs and bulb changes) or 2 (LOL - lots of logging)
+  verbosity: 0
+
+  # I use the OpenWeatherMap API (https://openweathermap.org)
+  # To get a key, go to https://home.openweathermap.org/users/sign_up, sign up, log in and generate a key. Note that
+  # it can take up to an hour for keys to work after creation!
+  api_key: "<lots of characters>"
+
+  # The city ID is another openweathermap phenomenen. The easiest way to get yours is to search "weather in your city",
+  # enter your city name then take it from the resulting URL - for example, in https://openweathermap.org/city/2747891
+  # my city id is 2747891
+  city_id: 2757345
+
+  # The IP of your HUE bridge. You can find this in your hue app in the bridge description for example
+  hue_ip: "<bridge ip>>"
+
+  # A list of bulbs to color with weather information
+  bulbs:
+    - "<some bulb name from the HUE app>"
+
+  # Refresh time in seconds. Note that OpenWeathermap expects you to behave in the number of requests!
+  refreshtime: 900
+
+  # Here's my list of colors. These look like RGB but are actually not as I use a converter to change them into the
+  # xy format required by the HUE lights. This converter handles color as following: if a single color value is set
+  # it's full on. (ie. #010000 is all out red). If more colors are set (ie. #010100) the ratio between the colors is
+  # taken with the largest set to full. I bet there is something I misunderstood there but I'll suck it for now. I use
+  # the Converter class found here: https://github.com/benknight/hue-python-rgb-converter, let me know if you figure it
+  # out.
+  # You probably won't need to change this.
+  colors:
+    blue: &blue
+      [0,0,255]
+    red: &red
+      [255, 0, 0]
+    green: &green
+      [0,250,0]
+    grey: &grey
+      [50,50,100]
+    bluegrey: &bluegrey
+      [20, 20, 200]
+    pink: &pink
+      [75,0,50]
+    yellow: &yellow
+      [100,100,0]
+
+  # The table mapping the color + a brightness to a weather description.
+  # See https://openweathermap.org/weather-conditions for the list of weather options. If a description is missing
+  # we will use the "default" entry for that weather type.
+  weathercolormap:
+    Thunderstorm:
+      default: [*red, 100]
+    Drizzle:
+      default: [*bluegrey, 30]
+    Rain:
+      default: [*bluegrey, 50]
+      extreme rain: [*blue, 100]
+      very heavy rain: [*blue, 100]
+      heavy intensity rain: [*blue, 100]
+      heavy intensity shower rain: [*blue, 100]
+      shower rain: [*blue, 100]
+    Snow:
+      default: [*pink, 200]
+      light snow: [*pink, 50]
+    Mist:
+      default: [*grey, 10]
+    Clear:
+      default: [*yellow, 90]
+    Clouds:
+      default: [*grey, 50]
+      few clouds: [*grey, 40]
+      scattered clouds: [*grey, 30]
+      broken clouds:  [*grey, 20]
+      overcast clouds:  [*grey, 10]
