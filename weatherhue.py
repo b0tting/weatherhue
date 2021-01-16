@@ -80,7 +80,7 @@ class HueColor:
                 except phue.PhueRegistrationException:
                     print("Please press the 'connect' button on your HUE bridge.")
                     print("Trying again in 10 seconds..")
-                    time.sleep(600)
+                    time.sleep(10)
                     self.huebridge.connect()
 
         logging.debug(f"Attempting to connect to bridge {self.ip} - if this fails, try pushing the button first")
