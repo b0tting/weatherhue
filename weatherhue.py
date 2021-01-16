@@ -12,14 +12,13 @@ import yaml
 from rgbxy import Converter, GamutA, GamutC, GamutB
 
 try:
-    from phue import Bridge
+    import phue
 except ImportError:
     pass
 
 
 class WeatherColor:
-    # I don't understand these XY colors very well. It seems whatever I feed in the way of RGB colors is only
-    # used to calculate a ratio between the colors and ignores the actual value
+    openweather_url = "https://api.openweathermap.org/data/2.5/forecast"
 
     def __init__(self, city_id, apikey, weather_table):
         self.city_id = city_id
@@ -30,7 +29,7 @@ class WeatherColor:
         self.weather_table = weather_table
 
     def get_forecast(self):
-        url = f"https://api.openweathermap.org/data/2.5/forecast?id={self.city_id}&appid={self.apikey}&mode=json"
+        url = f"{WeatherColor.openweather_url}?id={self.city_id}&appid={self.apikey}&mode=json"
         with urllib.request.urlopen(url) as open_url:
             data = json.loads(open_url.read().decode())
             logging.debug(f"Got forecast results:\n{data}")
@@ -73,9 +72,20 @@ class HueColor:
 
     def _connect(self):
         if not self.huebridge:
-            self.huebridge = Bridge(self.ip)
+            done = False
+            while not done:
+                try:
+                    self.huebridge = phue.Bridge(self.ip)
+                    done = True
+                except phue.PhueRegistrationException:
+                    print("Please press the 'connect' button on your HUE bridge.")
+                    print("Trying again in 10 seconds..")
+                    time.sleep(600)
+                    self.huebridge.connect()
+
         logging.debug(f"Attempting to connect to bridge {self.ip} - if this fails, try pushing the button first")
-        self.huebridge.connect()
+
+
 
     def set_bulbs_to_color(self, colortuple, bri, transition_time=100, gamut="gamutB"):
         converter = Converter(HueColor.gamuts[gamut])
@@ -141,8 +151,13 @@ if __name__ == "__main__":
 
     logging.debug(f"Got settings: {settings}")
 
+    # Weathercolor handles fetching the weather and returns a hex color code and brightness
     wc = WeatherColor(settings["city_id"], settings["api_key"], settings["weathercolormap"])
+
+    # HueColor then takes a hex color and colors a bulb accordingly
     hc = HueColor(settings["hue_ip"], settings["bulbs"])
+
+    # ...and the weather scheduler then runs every so many minutes combining both
     WeatherHueScheduler.refresh_time = settings['refreshtime']
     whs = WeatherHueScheduler(wc, hc)
     whs.start()
