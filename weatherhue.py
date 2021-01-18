@@ -1,4 +1,5 @@
 #/usr/bin/python3
+import argparse
 import logging
 import os
 import sched
@@ -104,7 +105,7 @@ class HueColor:
 
 
 class WeatherHueScheduler:
-    refresh_time = 900
+    refresh_time = 10
 
     def __init__(self, weather_color: WeatherColor, hue_color: HueColor):
         self.scheduler = sched.scheduler(time.time, time.sleep)
@@ -120,7 +121,6 @@ class WeatherHueScheduler:
 
     @staticmethod
     def set_next(hue_color: HueColor, weather_score: WeatherColor, scheduler_instance):
-        print("Running!)")
         weather_color, weather_brightness = wc.get_weather_color()
         hc.set_bulbs_to_color(weather_color, weather_brightness)
         scheduler_instance.enter(WeatherHueScheduler.refresh_time, 1, WeatherHueScheduler.set_next,
@@ -129,6 +129,16 @@ class WeatherHueScheduler:
 
 if __name__ == "__main__":
     config_file = "settings.yaml"
+    description = "WeatherHue is a script for reading the weather and setting a Philps HUE light accoringly\n" \
+                  "(https://github.com/b0tting/weatherhue). Run it without parameters to daemonize."
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("-t", "--test", action="store_true", help="Do a single run and show the results in words")
+    parser.add_argument("-w", "--weather", help=f"Force a given weather (see {config_file})")
+    parser.add_argument("-d", "--description", default="default", help=f"Force a given description (see {config_file})")
+    args = parser.parse_args()
+
+    deamonize = (not (args.test or args.weather))
+
     config_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
     if not os.path.exists(config_file_path):
         if os.path.exists(config_file_path + ".example"):
@@ -143,7 +153,6 @@ if __name__ == "__main__":
         print(f"City ID: https://openweathermap.org/city/{settings['city_id']}")
         print(f"HUE ip: https://{settings['hue_ip']}")
         print(f"Bulbs to change: {', '.join(settings['bulbs'])}")
-        print(f"..checking the weather every {settings['refreshtime'] // 60} minutes, CTRL-C to stop")
 
     if settings["verbosity"] > 0:
         level = logging.INFO if settings["verbosity"] == 1 else logging.DEBUG
@@ -157,7 +166,20 @@ if __name__ == "__main__":
     # HueColor then takes a hex color and colors a bulb accordingly
     hc = HueColor(settings["hue_ip"], settings["bulbs"])
 
-    # ...and the weather scheduler then runs every so many minutes combining both
-    WeatherHueScheduler.refresh_time = settings['refreshtime']
-    whs = WeatherHueScheduler(wc, hc)
-    whs.start()
+    if deamonize:
+        print(f"..checking the weather every {settings['refreshtime'] // 60} minutes, CTRL-C to stop")
+        # ...and the weather scheduler then runs every so many minutes combining both
+        WeatherHueScheduler.refresh_time = settings['refreshtime']
+        whs = WeatherHueScheduler(wc, hc)
+        whs.start()
+    else:
+        if args.weather:
+            main = args.weather
+            desc = args.description
+            print(f"Ignoring location, forced weather to {main} - {desc}")
+            color, bri = wc.get_weather_for_main_desc(main, desc)
+        else:
+            color, bri = wc.get_weather_color()
+            print(f"For your location, the weather to be expected soon is {wc.main} - {wc.desc}")
+        print(f"Now setting {hc.bulbs} to color {color} and brightness {bri}")
+        hc.set_bulbs_to_color(color, bri)

@@ -5,6 +5,19 @@ This is a python 3 based script which runs in the background and, given a city, 
 
 Note that if the bulb is off this won't explicitely turn it on. This script can be combined just fine with any on/off scheduling you have. 
 
+Start the script with the *-t* parameter to test the effect verbosely in a single run, without going into the background. You can also test the effect of different colors in the settings file by using the -t and also passing a weather and optional description argument.
+
+```bash
+WeatherHue is a script for reading the weather and setting a Philps HUE light accoringly (https://github.com/b0tting/weatherhue). Run it without parameters to daemonize.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t, --test            Do a single run and show the results in words
+  -w WEATHER, --weather WEATHER
+                        Force a given weather (see settings.yaml)
+  -d DESCRIPTION, --description DESCRIPTION
+                        Force a given description (see settings.yaml)
+```  
 
 ## Installation
 First, edit the settings.yaml.example file and add your HUE IP and the Openweathermap API key. See the settings file for more info.   
