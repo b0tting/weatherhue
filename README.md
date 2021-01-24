@@ -26,9 +26,9 @@ pip3 install -r requirements.txt -U
 mv settings.yaml.example settings.yaml
 python3 weatherhue.py
 ```
-For the initial start, press the button on your hue bridge to allow the phue library to create an access key. 
+For the initial start, press the button on your hue bridge to allow the phue library to create an access key. This is saved in the weatherhue dir in a .python_hue file. If you do this now you won't have to press the button when you start it as a systemd service. 
 
-You could also add a simple systemd service unit script for later starts:
+Speaking of, you could also add a simple systemd service unit script for later starts:
 ```
 [Unit]
 Description=WeatherHue python app

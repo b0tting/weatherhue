@@ -66,27 +66,26 @@ class HueColor:
         "gamutC": GamutC,
     }
 
-    def __init__(self, ip, bulbnames):
+    def __init__(self, ip, bulbnames, pwfile=None):
         self.ip = ip
         self.huebridge = False
         self.bulbs = list(bulbnames)
+        self.pwfile = pwfile
 
     def _connect(self):
         if not self.huebridge:
             done = False
             while not done:
                 try:
-                    self.huebridge = phue.Bridge(self.ip)
+                    self.huebridge = phue.Bridge(self.ip, None, self.pwfile)
                     done = True
+                    print("HUE bridge login succesful")
                 except phue.PhueRegistrationException:
                     print("Please press the 'connect' button on your HUE bridge.")
                     print("Trying again in 10 seconds..")
                     time.sleep(10)
-                    self.huebridge.connect()
 
         logging.debug(f"Attempting to connect to bridge {self.ip} - if this fails, try pushing the button first")
-
-
 
     def set_bulbs_to_color(self, colortuple, bri, transition_time=100, gamut="gamutB"):
         converter = Converter(HueColor.gamuts[gamut])
@@ -114,6 +113,7 @@ class WeatherHueScheduler:
 
     def start(self):
         weather_color, weather_brightness = wc.get_weather_color()
+        print(f"..checking the weather every {settings['refreshtime'] // 60} minutes, CTRL-C to stop")
         hc.set_bulbs_to_color(weather_color, weather_brightness)
         self.scheduler.enter(WeatherHueScheduler.refresh_time, 1, WeatherHueScheduler.set_next,
                              (self.hue_color, self.weather_color, self.scheduler))
@@ -139,7 +139,8 @@ if __name__ == "__main__":
 
     deamonize = (not (args.test or args.weather))
 
-    config_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
+    work_dir = os.path.dirname(os.path.realpath(__file__))
+    config_file_path = os.path.join(work_dir, config_file)
     if not os.path.exists(config_file_path):
         if os.path.exists(config_file_path + ".example"):
             print(
@@ -164,10 +165,10 @@ if __name__ == "__main__":
     wc = WeatherColor(settings["city_id"], settings["api_key"], settings["weathercolormap"])
 
     # HueColor then takes a hex color and colors a bulb accordingly
-    hc = HueColor(settings["hue_ip"], settings["bulbs"])
+    pwfile = os.path.join(work_dir, ".python_hue")
+    hc = HueColor(settings["hue_ip"], settings["bulbs"], pwfile)
 
     if deamonize:
-        print(f"..checking the weather every {settings['refreshtime'] // 60} minutes, CTRL-C to stop")
         # ...and the weather scheduler then runs every so many minutes combining both
         WeatherHueScheduler.refresh_time = settings['refreshtime']
         whs = WeatherHueScheduler(wc, hc)
