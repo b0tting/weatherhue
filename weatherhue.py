@@ -114,7 +114,11 @@ class WeatherHueScheduler:
     def start(self):
         weather_color, weather_brightness = wc.get_weather_color()
         print(f"..checking the weather every {settings['refreshtime'] // 60} minutes, CTRL-C to stop")
-        hc.set_bulbs_to_color(weather_color, weather_brightness)
+        try:
+            hc.set_bulbs_to_color(weather_color, weather_brightness)
+        except Exception as e:
+            print(f"There was an error setting the bulbs to a color: {e}")
+            pass
         self.scheduler.enter(WeatherHueScheduler.refresh_time, 1, WeatherHueScheduler.set_next,
                              (self.hue_color, self.weather_color, self.scheduler))
         self.scheduler.run()
